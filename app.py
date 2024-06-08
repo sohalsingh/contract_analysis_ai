@@ -1,13 +1,18 @@
-# app.py
+#app.py
 from fastapi import FastAPI, File, UploadFile
 from pydantic import BaseModel
 import fitz  # PyMuPDF
 
 app = FastAPI()
 
+class RiskData(BaseModel):
+    description: str
+    level: str
+
 class AnalysisResult(BaseModel):
-    risks: str
+    analysis: str
     summary: str
+    risks: list[RiskData]
 
 def extract_text_from_pdf(file):
     document = fitz.open(stream=file.read(), filetype="pdf")
@@ -19,15 +24,19 @@ def extract_text_from_pdf(file):
 
 def analyze_text(text):
     # Placeholder for your actual model analysis
-    risks = "Identified risks based on analysis"
+    analysis = "Detailed analysis of the contract"
     summary = "Summary of the contract"
-    return risks, summary
+    risks = [
+        {"description": "Risk 1 description", "level": "High"},
+        {"description": "Risk 2 description", "level": "Medium"}
+    ]
+    return analysis, summary, risks
 
 @app.post("/analyze", response_model=AnalysisResult)
 async def analyze(file: UploadFile = File(...)):
     text = extract_text_from_pdf(file.file)
-    risks, summary = analyze_text(text)
-    return AnalysisResult(risks=risks, summary=summary)
+    analysis, summary, risks = analyze_text(text)
+    return AnalysisResult(analysis=analysis, summary=summary, risks=risks)
 
 if __name__ == "__main__":
     import uvicorn
